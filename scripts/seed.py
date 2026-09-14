@@ -143,11 +143,12 @@ async def main() -> None:
     load_dotenv()
     rng = random.Random(42)  # детерминированный сид — воспроизводимые данные
     async with Bitrix24Client() as b24:
-        # UF-поле под ИНН: создаём, если ещё нет (повторное создание — просто ошибка)
+        # UF-поле под ИНН: имя нужно передавать с префиксом UF_CRM_,
+        # иначе Битрикс допишет его сам (CRM_INN -> UF_CRM_CRM_INN)
         try:
             await b24.call(
                 "crm.company.userfield.add",
-                {"fields": {"FIELD_NAME": "CRM_INN", "USER_TYPE_ID": "string", "MULTIPLE": "N"}},
+                {"fields": {"FIELD_NAME": "UF_CRM_INN", "USER_TYPE_ID": "string", "MULTIPLE": "N"}},
             )
         except Bitrix24Error as exc:
             print(f"UF-поле ИНН: пропускаю ({exc})")
