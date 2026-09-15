@@ -96,7 +96,42 @@ async def _qa_deps():
     return _pool, _embedder
 
 
-@dp.message(F.text)
+@dp.message(Command("find"))
+async def on_find(message: Message, command: CommandObject) -> None:
+    from rag.search import hybrid_items, parse_budget
+
+    query = (command.args or "").strip()
+    if not query:
+        await message.answer("Использование: /find насос для скважины до 30к")
+        return
+    deal_id = last_deal.get(message.chat.id)
+    notice = await message.answer("🔍 Семантический поиск по каталогу…")
+    pool, embedder = await _qa_deps()
+    max_price = parse_budget(query)
+    items = await hybrid_items(pool, embedder, query, k=5, max_price=max_price)
+    if not items:
+        await notice.edit_text("Ничего не нашлось. Попробуй другую формулировку.")
+        return
+    budget_note = f" (бюджет до {max_price:.0f} ₽)" if max_price else ""
+    lines = [f"🛒 **Подбор по каталогу**{budget_note}: «{query}»", ""]
+    for item in items:
+        price = f"{item['price']:.0f} ₽" if item["price"] else "цена не указана"
+        lines.append(f"• {item['title']} — {price}")
+    lines.append("")
+    if deal_id:
+        lines.append(f"Приложить товар к сделке #{deal_id} (создана в этом чате):")
+    else:
+        lines.append("Чтобы прикладывать товары к сделке — сначала создай сделку из счёта 📸")
+    await notice.edit_text("\n".join(lines), parse_mode="Markdown")
+    if deal_id:
+        for item in items[:3]:
+            await message.answer(
+                f"🛒 {item['title']}",
+                reply_markup=find_keyboard(deal_id, int(item["product_id"]), item["price"]),
+            )
+
+
+@dp.message(F.text, ~F.text.startswith("/"))
 async def on_question(message: Message) -> None:
     from agent.qa import answer_question
     from providers.llm import LLM
@@ -167,41 +202,6 @@ def find_keyboard(deal_id: int, product_id: int, price) -> InlineKeyboardMarkup:
             callback_data=f"doc2crm:attach:{deal_id}:{product_id}",
         )
     ]])
-
-
-@dp.message(Command("find"))
-async def on_find(message: Message, command: CommandObject) -> None:
-    from rag.search import hybrid_items, parse_budget
-
-    query = (command.args or "").strip()
-    if not query:
-        await message.answer("Использование: /find насос для скважины до 30к")
-        return
-    deal_id = last_deal.get(message.chat.id)
-    notice = await message.answer("🔍 Семантический поиск по каталогу…")
-    pool, embedder = await _qa_deps()
-    max_price = parse_budget(query)
-    items = await hybrid_items(pool, embedder, query, k=5, max_price=max_price)
-    if not items:
-        await notice.edit_text("Ничего не нашлось. Попробуй другую формулировку.")
-        return
-    budget_note = f" (бюджет до {max_price:.0f} ₽)" if max_price else ""
-    lines = [f"🛒 **Подбор по каталогу**{budget_note}: «{query}»", ""]
-    for item in items:
-        price = f"{item['price']:.0f} ₽" if item["price"] else "цена не указана"
-        lines.append(f"• {item['title']} — {price}")
-    lines.append("")
-    if deal_id:
-        lines.append(f"Приложить товар к сделке #{deal_id} (создана в этом чате):")
-    else:
-        lines.append("Чтобы прикладывать товары к сделке — сначала создай сделку из счёта 📸")
-    await notice.edit_text("\n".join(lines), parse_mode="Markdown")
-    if deal_id:
-        for item in items[:3]:
-            await message.answer(
-                f"🛒 {item['title']}",
-                reply_markup=find_keyboard(deal_id, int(item["product_id"]), item["price"]),
-            )
 
 
 @dp.callback_query(F.data.startswith("doc2crm:attach:"))
