@@ -1,0 +1,19 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: doc2crm
+      POSTGRES_USER: doc2crm
+      POSTGRES_PASSWORD: doc2crm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./rag/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U doc2crm"]
+      interval: 3s
+      retries: 10
+
+volumes:
+  pgdata:

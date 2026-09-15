@@ -8,6 +8,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "pydantic>=2.7",
     "fastembed>=0.6",
+    "asyncpg>=0.29",
 ]
 
 [project.optional-dependencies]

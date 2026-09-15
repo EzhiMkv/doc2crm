@@ -63,16 +63,13 @@ class Bitrix24Client:
                 await asyncio.sleep(wait)
             self._last_call = time.monotonic()
 
-    async def call(self, method: str, params: dict[str, Any] | None = None) -> Any:
-        """Один REST-вызов. Возвращает поле ``result`` ответа.
-
-        QUERY_LIMIT_EXCEEDED ретраится с экспоненциальным backoff —
-        у Битрикса кратковременные всплески допустимы, важно не сдаваться сразу.
-        """
+    async def _call_full(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Полный ответ Битрикса (result + next + total). Служебный метод:
+        list_all нужна пагинационная метадата, которую call() отбрасывает."""
         params = params or {}
         delay = 0.5
         last_error = ""
-        for attempt in range(self._max_retries):
+        for _ in range(self._max_retries):
             await self._throttle()
             resp = await self._http.post(method.strip("/") + ".json", json=params)
             try:
@@ -82,7 +79,7 @@ class Bitrix24Client:
                     f"{method}: не-JSON ответ (HTTP {resp.status_code})"
                 ) from exc
             if "error" not in data:
-                return data.get("result")
+                return data
             last_error = f"{data['error']}: {data.get('error_description', '')}"
             if data["error"] == "QUERY_LIMIT_EXCEEDED":
                 await asyncio.sleep(delay)
@@ -90,10 +87,19 @@ class Bitrix24Client:
                 continue
             if data["error"] == "insufficient_scope":
                 raise Bitrix24ScopeError(
-                    f"{method}: вебхуку не хватает прав — отметь CRM в правах вебхука"
+                    f"{method}: вебхуку не хватает прав — отметь недостающий скоуп в правах вебхука"
                 )
             raise Bitrix24Error(f"{method}: {last_error}")
         raise Bitrix24Error(f"{method}: лимит не отпустил за {self._max_retries} попыток ({last_error})")
+
+    async def call(self, method: str, params: dict[str, Any] | None = None) -> Any:
+        """Один REST-вызов. Возвращает поле ``result`` ответа.
+
+        QUERY_LIMIT_EXCEEDED ретраится с экспоненциальным backoff —
+        у Битрикса кратковременные всплески допустимы, важно не сдаваться сразу.
+        """
+        data = await self._call_full(method, params)
+        return data.get("result")
 
     # ------------------------------------------------------------------ batch
 
@@ -150,20 +156,23 @@ class Bitrix24Client:
         Используется для проекции каталога в RAG-слой (см. ARCHITECTURE.md).
         """
         items: list[dict[str, Any]] = []
-        start: int | None = -1  # -1 = с начала
+        # ВАЖНО: в JSON-запросах start=-1 подавляет next/total в ответе,
+        # поэтому первая страница = start=0 (для форм-энкодеда легален только -1)
+        start: int | None = 0
         while start is not None:
             params: dict[str, Any] = {"select": select, "start": start}
             if filters:
                 params["filter"] = filters
-            result = await self.call(method, params)
+            data = await self._call_full(method, params)
+            result = data.get("result", [])
             batch_items = result if isinstance(result, list) else result.get("items", [])
             items.extend(batch_items)
-            next_start = (
-                result.get("next") if isinstance(result, dict) and "next" in result else None
-            )
+            # next отдаётся только когда есть ещё страницы; total — страховка
+            total = data.get("total")
+            next_start = data.get("next")
+            if next_start is None and total and batch_items and len(items) < int(total):
+                next_start = len(items)
             start = next_start if batch_items else None
-            if isinstance(batch_items, list) and len(batch_items) < 50:
-                break
         return items
 
     async def deal_comment_add(self, deal_id: int, comment: str) -> Any:
