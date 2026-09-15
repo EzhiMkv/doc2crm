@@ -68,10 +68,58 @@ def confirm_keyboard(thread: str) -> InlineKeyboardMarkup:
 @dp.message(CommandStart())
 async def start(message: Message) -> None:
     await message.answer(
-        "Привет! Я doc2crm 📄→💼\n"
-        "Пришли фото счёта — я извлеку реквизиты, найду контрагента\n"
-        "и после твоего подтверждения создам сделку в Битрикс24."
+        "Привет! Я doc2crm 📄→💼\n\n"
+        "📸 Пришли **фото счёта** — я извлеку реквизиты, найду контрагента\n"
+        "и после твоего подтверждения создам сделку в Битрикс24.\n\n"
+        "🔍 А ещё можешь просто **спросить текстом** по загруженным документам:\n"
+        "«На какую сумму были счета от Ромашки?»",
+        parse_mode="Markdown",
     )
+
+
+# ── режим Q&A: текстовый вопрос -> поиск по документам -> ответ с цитатами ──
+
+_pool = None
+_embedder = None
+
+
+async def _qa_deps():
+    global _pool, _embedder
+    if _pool is None:
+        from rag.db import create_pool
+
+        _pool = await create_pool()
+    if _embedder is None:
+        from providers.embeddings import get_embedder
+
+        _embedder = get_embedder()
+    return _pool, _embedder
+
+
+@dp.message(F.text)
+async def on_question(message: Message) -> None:
+    from agent.qa import answer_question
+    from providers.llm import LLM
+
+    notice = await message.answer("🔍 Ищу по документам…")
+    try:
+        pool, embedder = await _qa_deps()
+        llm = LLM()
+        try:
+            answer, sources = await answer_question(pool, embedder, llm, message.text)
+        finally:
+            await llm.aclose()
+    except Exception as ex:  # noqa: BLE001 — пользователю уходим коротким сообщением
+        await notice.edit_text(f"💥 Поиск не удался: {str(ex)[:150]}")
+        return
+    text = f"💬 {answer}"
+    if sources:
+        text += "\n\n── источники ──\n" + "\n".join(
+            f"[{i}] счёт №{h['doc_number']} от {h['doc_date']} | "
+            f"{h['seller_name']} | итог {h['total']}"
+            for i, h in enumerate(sources, 1)
+        )
+    await notice.edit_text(text[:4000])
 
 
 @dp.message(F.photo)
