@@ -19,7 +19,7 @@ load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env")
 import os
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import CommandStart
+from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
@@ -146,12 +146,89 @@ async def on_decision(query: CallbackQuery, bot: Bot) -> None:
     await query.message.edit_reply_markup(reply_markup=None)
     state = await resume_document_flow(graph, thread, decision)
     if state.get("deal_id"):
+        last_deal[query.message.chat.id] = state["deal_id"]
         await query.message.answer(
             f"💼 **Готово!** Сделка #{state['deal_id']} создана:\n{state['deal_url']}",
             parse_mode="Markdown",
         )
     else:
         await query.message.answer("🚫 Отменено. Документ не попал в CRM.")
+
+
+# ── режим каталога: /find «насос для скважины до 30к» -> товары -> в сделку ──
+
+last_deal: dict[int, int] = {}  # chat_id -> последняя сделка, созданная в чате
+
+
+def find_keyboard(deal_id: int, product_id: int, price) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text=f"➕ В сделку #{deal_id}" + (f" ({price:.0f} ₽)" if price else ""),
+            callback_data=f"doc2crm:attach:{deal_id}:{product_id}",
+        )
+    ]])
+
+
+@dp.message(Command("find"))
+async def on_find(message: Message, command: CommandObject) -> None:
+    from rag.search import hybrid_items, parse_budget
+
+    query = (command.args or "").strip()
+    if not query:
+        await message.answer("Использование: /find насос для скважины до 30к")
+        return
+    deal_id = last_deal.get(message.chat.id)
+    notice = await message.answer("🔍 Семантический поиск по каталогу…")
+    pool, embedder = await _qa_deps()
+    max_price = parse_budget(query)
+    items = await hybrid_items(pool, embedder, query, k=5, max_price=max_price)
+    if not items:
+        await notice.edit_text("Ничего не нашлось. Попробуй другую формулировку.")
+        return
+    budget_note = f" (бюджет до {max_price:.0f} ₽)" if max_price else ""
+    lines = [f"🛒 **Подбор по каталогу**{budget_note}: «{query}»", ""]
+    for item in items:
+        price = f"{item['price']:.0f} ₽" if item["price"] else "цена не указана"
+        lines.append(f"• {item['title']} — {price}")
+    lines.append("")
+    if deal_id:
+        lines.append(f"Приложить товар к сделке #{deal_id} (создана в этом чате):")
+    else:
+        lines.append("Чтобы прикладывать товары к сделке — сначала создай сделку из счёта 📸")
+    await notice.edit_text("\n".join(lines), parse_mode="Markdown")
+    if deal_id:
+        for item in items[:3]:
+            await message.answer(
+                f"🛒 {item['title']}",
+                reply_markup=find_keyboard(deal_id, int(item["product_id"]), item["price"]),
+            )
+
+
+@dp.callback_query(F.data.startswith("doc2crm:attach:"))
+async def on_attach(query: CallbackQuery, bot: Bot) -> None:
+    _, _, deal_id, product_id = query.data.split(":", 3)
+    async with _b24_client() as b24:
+        rows = await b24.call("crm.deal.productrows.get", {"ID": int(deal_id)}) or []
+        price = None
+        try:
+            product = await b24.call("crm.product.get", {"id": product_id})
+            price = product.get("PRICE")
+        except Exception:  # noqa: BLE001 — цена не критична для прикрепления
+            price = None
+        row: dict = {"PRODUCT_ID": int(product_id), "QUANTITY": 1}
+        if price:
+            row["PRICE"] = price
+        await b24.call(
+            "crm.deal.productrows.set", {"ID": int(deal_id), "rows": rows + [row]}
+        )
+    await query.answer("✅ Товар приложен к сделке", show_alert=False)
+    await query.message.edit_reply_markup(reply_markup=None)
+
+
+def _b24_client():
+    from b24client import Bitrix24Client
+
+    return Bitrix24Client()
 
 
 async def main() -> None:
