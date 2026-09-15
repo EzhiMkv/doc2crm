@@ -74,16 +74,34 @@ async def main() -> None:
 
     llm = LLM()
     results = []
+    out = FIXTURES.parent / "results.json"
+
+    def save() -> None:
+        accs = [r["accuracy"] for r in results if "accuracy" in r]
+        summary = {
+            "model": llm.model,
+            "documents": len(results),
+            "field_accuracy": round(sum(accs) / len(accs), 3) if accs else 0,
+            "seconds_per_doc": round(
+                sum(r.get("seconds", 0) for r in results) / max(len(accs), 1), 1
+            ),
+        }
+        out.write_text(
+            json.dumps({"summary": summary, "results": results}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
     for png, gt in pairs:
         try:
             r = await eval_one(llm, png, gt)
             results.append(r)
             missed = [k for k, ok in r["per_field"].items() if not ok]
             print(f"{png.name}: {r['accuracy']:.0%} за {r['seconds']}s"
-                  + (f" | промахи: {missed}" if missed else ""))
+                  + (f" | промахи: {missed}" if missed else ""), flush=True)
         except Exception as ex:  # noqa: BLE001
             results.append({"file": png.name, "error": str(ex)[:200]})
-            print(f"{png.name}: ОШИБКА {str(ex)[:100]}")
+            print(f"{png.name}: ОШИБКА {str(ex)[:100]}", flush=True)
+        save()  # после каждого документа — прогресс не теряется
     await llm.aclose()
 
     accs = [r["accuracy"] for r in results if "accuracy" in r]
@@ -95,13 +113,8 @@ async def main() -> None:
             sum(r.get("seconds", 0) for r in results) / max(len(accs), 1), 1
         ),
     }
-    out = FIXTURES.parent / "results.json"
-    out.write_text(
-        json.dumps({"summary": summary, "results": results}, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
     print(f"\nИТОГО: точность по полям {summary['field_accuracy']:.1%}, "
-          f"{summary['seconds_per_doc']}s/док → {out}")
+          f"{summary['seconds_per_doc']}s/док → {out}", flush=True)
 
 
 if __name__ == "__main__":

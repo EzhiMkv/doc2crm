@@ -1,0 +1,403 @@
+{
+  "summary": {
+    "model": "dots-studio/dots-3-note-preview:free",
+    "documents": 20,
+    "field_accuracy": 1.0,
+    "seconds_per_doc": 36.9
+  },
+  "results": [
+    {
+      "file": "invoice_1.png",
+      "seconds": 32.6,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-1»",
+        "seller_inn": "2914177766",
+        "document_number": "4439",
+        "document_date": "2026-09-08",
+        "total": 215506.0
+      }
+    },
+    {
+      "file": "invoice_2.png",
+      "seconds": 46.8,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-2»",
+        "seller_inn": "0115244934",
+        "document_number": "1585",
+        "document_date": "2026-08-08",
+        "total": 413914.0
+      }
+    },
+    {
+      "file": "invoice_3.png",
+      "seconds": 27.8,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-3»",
+        "seller_inn": "3982597915",
+        "document_number": "1215",
+        "document_date": "2026-07-18",
+        "total": 337416.0
+      }
+    },
+    {
+      "file": "invoice_4.png",
+      "seconds": 36.6,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-4»",
+        "seller_inn": "3416721103",
+        "document_number": "7579",
+        "document_date": "2026-08-10",
+        "total": 88592.0
+      }
+    },
+    {
+      "file": "invoice_5.png",
+      "seconds": 37.0,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-5»",
+        "seller_inn": "9458073021",
+        "document_number": "2854",
+        "document_date": "2026-08-22",
+        "total": 137437.0
+      }
+    },
+    {
+      "file": "invoice_6.png",
+      "seconds": 34.5,
+      "issues": [
+        "низкая уверенность модели: currency (50%)"
+      ],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-6»",
+        "seller_inn": "9174002972",
+        "document_number": "7113",
+        "document_date": "2026-08-25",
+        "total": 276498.0
+      }
+    },
+    {
+      "file": "invoice_7.png",
+      "seconds": 36.9,
+      "issues": [
+        "ИНН 9260181598: не проходит контрольную сумму — вероятна галлюцинация или ошибка распознавания",
+        "низкая уверенность модели: currency (50%)"
+      ],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-7»",
+        "seller_inn": "9260181598",
+        "document_number": "1950",
+        "document_date": "2026-07-18",
+        "total": 180192.0
+      }
+    },
+    {
+      "file": "invoice_8.png",
+      "seconds": 45.5,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-8»",
+        "seller_inn": "3562301234",
+        "document_number": "9296",
+        "document_date": "2026-09-01",
+        "total": 214819.0
+      }
+    },
+    {
+      "file": "invoice_9.png",
+      "seconds": 31.1,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-9»",
+        "seller_inn": "7954220583",
+        "document_number": "8597",
+        "document_date": "2026-07-19",
+        "total": 217813.0
+      }
+    },
+    {
+      "file": "invoice_10.png",
+      "seconds": 37.2,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-10»",
+        "seller_inn": "9067903771",
+        "document_number": "5546",
+        "document_date": "2026-08-04",
+        "total": 51080.0
+      }
+    },
+    {
+      "file": "invoice_11.png",
+      "seconds": 47.1,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-11»",
+        "seller_inn": "7877893285",
+        "document_number": "8794",
+        "document_date": "2026-08-05",
+        "total": 299009.0
+      }
+    },
+    {
+      "file": "invoice_12.png",
+      "seconds": 32.1,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-12»",
+        "seller_inn": "7485260570",
+        "document_number": "5490",
+        "document_date": "2026-08-04",
+        "total": 178362.0
+      }
+    },
+    {
+      "file": "invoice_13.png",
+      "seconds": 32.1,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-13»",
+        "seller_inn": "4423232218",
+        "document_number": "9705",
+        "document_date": "2026-07-22",
+        "total": 98066.0
+      }
+    },
+    {
+      "file": "invoice_14.png",
+      "seconds": 38.7,
+      "issues": [
+        "ИНН 9983444178: не проходит контрольную сумму — вероятна галлюцинация или ошибка распознавания"
+      ],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-14»",
+        "seller_inn": "9983444178",
+        "document_number": "5964",
+        "document_date": "2026-08-16",
+        "total": 251736.0
+      }
+    },
+    {
+      "file": "invoice_15.png",
+      "error": "1 validation error for Invoice\nconfidence.items\n  Input should be a valid number [type=float_type, input_value={'name': 1.0, 'qty': 1.0,...ice': 1.0, 'total': 0.7}, input_type=dict]\n    For further in"
+    },
+    {
+      "file": "invoice_16.png",
+      "seconds": 40.8,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-16»",
+        "seller_inn": "5774637060",
+        "document_number": "5241",
+        "document_date": "2026-08-30",
+        "total": 173999.0
+      }
+    },
+    {
+      "file": "invoice_17.png",
+      "seconds": 42.3,
+      "issues": [
+        "низкая уверенность модели: currency (50%)"
+      ],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-17»",
+        "seller_inn": "8645428410",
+        "document_number": "1441",
+        "document_date": "2026-08-30",
+        "total": 260196.0
+      }
+    },
+    {
+      "file": "invoice_18.png",
+      "seconds": 34.2,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-18»",
+        "seller_inn": "2175337721",
+        "document_number": "8860",
+        "document_date": "2026-08-27",
+        "total": 93560.0
+      }
+    },
+    {
+      "file": "invoice_19.png",
+      "seconds": 39.1,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-19»",
+        "seller_inn": "0818365844",
+        "document_number": "3429",
+        "document_date": "2026-08-07",
+        "total": 134394.0
+      }
+    },
+    {
+      "file": "invoice_20.png",
+      "seconds": 28.5,
+      "issues": [],
+      "per_field": {
+        "seller_name": true,
+        "seller_inn": true,
+        "document_number": true,
+        "document_date": true,
+        "total": true
+      },
+      "accuracy": 1.0,
+      "extracted": {
+        "seller_name": "ООО «ТестПоставщик-20»",
+        "seller_inn": "2415920665",
+        "document_number": "2228",
+        "document_date": "2026-09-08",
+        "total": 232265.0
+      }
+    }
+  ]
+}

@@ -38,6 +38,20 @@ class Invoice(BaseModel):
             return None
         return v.replace(" ", "").replace("\u00a0", "")
 
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def _numeric_confidence(cls, v):
+        """Модели любят писать в confidence строки («высокая») — мусор в мусор."""
+        if not isinstance(v, dict):
+            return {}
+        clean = {}
+        for key, value in v.items():
+            try:
+                clean[key] = float(value)
+            except (TypeError, ValueError):
+                continue
+        return clean
+
     def issues(self) -> list[str]:
         """Список проблем, найденных кросс-валидацией полей."""
         problems: list[str] = []
