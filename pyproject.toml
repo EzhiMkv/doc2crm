@@ -9,6 +9,8 @@ dependencies = [
     "pydantic>=2.7",
     "fastembed>=0.6",
     "asyncpg>=0.29",
+    "langgraph>=0.4",
+    "aiogram>=3.13",
 ]
 
 [project.optional-dependencies]
