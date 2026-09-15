@@ -174,7 +174,7 @@ async def on_photo(message: Message, bot: Bot) -> None:
     )
 
 
-@dp.callback_query(F.data.startswith("doc2crm:confirm:"), F.data.startswith("doc2crm:cancel:"))
+@dp.callback_query(F.data.startswith("doc2crm:confirm:") | F.data.startswith("doc2crm:cancel:"))
 async def on_decision(query: CallbackQuery, bot: Bot) -> None:
     _, action, thread = query.data.split(":", 2)
     decision = "yes" if action == "confirm" else "no"
