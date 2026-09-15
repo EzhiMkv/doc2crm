@@ -174,12 +174,18 @@ async def on_photo(message: Message, bot: Bot) -> None:
     )
 
 
-@dp.callback_query(F.data.startswith("doc2crm:"))
+@dp.callback_query(F.data.startswith("doc2crm:confirm:"), F.data.startswith("doc2crm:cancel:"))
 async def on_decision(query: CallbackQuery, bot: Bot) -> None:
     _, action, thread = query.data.split(":", 2)
     decision = "yes" if action == "confirm" else "no"
     await query.message.edit_reply_markup(reply_markup=None)
-    state = await resume_document_flow(graph, thread, decision)
+    try:
+        state = await resume_document_flow(graph, thread, decision)
+    except Exception:  # noqa: BLE001 — сессия потеряна (рестарт бота, старая кнопка)
+        await query.message.answer(
+            "⚠️ Сессия устарела (бот перезапускался). Пришли документ заново 📸"
+        )
+        return
     if state.get("deal_id"):
         last_deal[query.message.chat.id] = state["deal_id"]
         await query.message.answer(
