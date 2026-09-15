@@ -9,7 +9,10 @@ GigaChat-эмбеддинги остаются опцией (embeddings API пл
 from __future__ import annotations
 
 import os
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from providers.gigachat import GigaChatLLM
 
 EMBED_MODEL_ENV = "EMBED_MODEL"
 DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
