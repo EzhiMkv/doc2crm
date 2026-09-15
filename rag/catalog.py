@@ -10,17 +10,38 @@ from __future__ import annotations
 
 import asyncpg
 
-from b24client import Bitrix24Client
+from b24client import Bitrix24Client, Bitrix24Error
 from providers.embeddings import Embedder
+
+
+async def _fetch_prices(b24: Bitrix24Client) -> dict[str, float]:
+    """Цены из торгового каталога (catalog.price.list). В облаке цены живут
+    отдельно от crm.product (поле PRICE там всегда None — проверено 15.09),
+    тип цен должен существовать на портале (catalog.priceType.add)."""
+    prices: dict[str, float] = {}
+    start: int | None = 0
+    while start is not None:
+        data = await b24._call_full(
+            "catalog.price.list",
+            {"select": ["productId", "price"], "start": start},
+        )
+        for row in data.get("result", {}).get("prices", []):
+            prices[str(row["productId"])] = float(row["price"])
+        start = data.get("next")
+    return prices
 
 
 async def sync_catalog(b24: Bitrix24Client, embedder: Embedder, pool: asyncpg.Pool) -> int:
     rows = await b24.list_all(
         "crm.product.list",
-        select=["ID", "NAME", "DESCRIPTION", "PRICE", "ACTIVE"],
+        select=["ID", "NAME", "DESCRIPTION", "ACTIVE"],
     )
     if not rows:
         return 0
+    try:
+        prices = await _fetch_prices(b24)
+    except Bitrix24Error:
+        prices = {}  # нет скоупа catalog — работаем без цен
     texts = [
         f"{r.get('NAME', '')}. {r.get('DESCRIPTION') or ''}".strip() for r in rows
     ]
@@ -30,7 +51,7 @@ async def sync_catalog(b24: Bitrix24Client, embedder: Embedder, pool: asyncpg.Po
             str(r["ID"]),
             r.get("NAME", ""),
             text,
-            r.get("PRICE"),
+            prices.get(str(r["ID"])),
             r.get("ACTIVE", "Y") == "Y",
             "[" + ",".join(f"{x:.6f}" for x in vec) + "]",
         )
