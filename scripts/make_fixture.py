@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 import random
 import sys
 from datetime import UTC, datetime, timedelta
@@ -81,8 +82,19 @@ def make_invoice_image(path: Path, seed: int = 1, *, break_inn: bool = False) ->
 
 
 if __name__ == "__main__":
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--count", type=int, default=3)
+    parser.add_argument("--start-seed", type=int, default=1)
+    args = parser.parse_args()
+
     out = Path(__file__).resolve().parents[1] / "evals" / "fixtures"
     out.mkdir(parents=True, exist_ok=True)
-    for s in range(1, 4):
-        gt = make_invoice_image(out / f"invoice_{s}.png", seed=s)
+    for s in range(args.start_seed, args.start_seed + args.count):
+        gt = make_invoice_image(out / f"invoice_{s}.png", seed=s, break_inn=(s % 7 == 0))
+        (out / f"invoice_{s}.gt.json").write_text(
+            json.dumps(gt, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         print(s, gt)
