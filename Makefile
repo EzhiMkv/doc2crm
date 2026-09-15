@@ -10,6 +10,9 @@ bot:              ## запустить Telegram-бота
 seed:            ## залить тестовые данные на портал Битрикса
 	.venv/bin/python -m scripts.seed
 
+rag-demo:         ## индексация каталога + демо гибридного поиска
+	.venv/bin/python -m scripts.rag_demo
+
 eval:            ## прогнать eval-сет извлечения
 	.venv/bin/python -m scripts.run_eval
 
