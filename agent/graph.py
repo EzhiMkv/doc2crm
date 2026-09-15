@@ -1,7 +1,7 @@
 """Граф агента «пришёл документ — появилась сделка» (LangGraph).
 
 Пайплайн:
-    extract → validate → match → confirm(HITL) → execute → report
+    extract → validate → ingest(RAG) → match → confirm(HITL) → execute → report
 
 Ключевая точка — узел confirm: граф ПРЕРЫВАЕТСЯ через interrupt() и ждёт
 решения человека сколько угодно долго (состояние в чекпойнтере). После
@@ -76,6 +76,29 @@ def validate_node(state: AgentState) -> dict[str, Any]:
     return {"issues": invoice.issues(), "needs_review": invoice.needs_human_review()}
 
 
+async def ingest_node(state: AgentState) -> dict[str, Any]:
+    """Документ попадает в RAG-хранилище сразу после валидации —
+    независимо от решения по сделке. Сбой RAG не валит пайплайн."""
+    try:
+        from agent.schemas import Invoice
+        from providers.embeddings import get_embedder
+        from rag.db import create_pool
+        from rag.documents import ingest_invoice
+
+        inv = Invoice.model_validate(state["invoice"])
+        pool = await create_pool()
+        try:
+            await ingest_invoice(
+                pool, get_embedder(), inv,
+                source="telegram", file_path=state.get("image_path"),
+            )
+        finally:
+            await pool.close()
+    except Exception as ex:  # noqa: BLE001 — RAG некритичен для сделки,
+        print(f"ingest skipped: {ex!r}"[:120])  # но сбой фиксируем
+    return {}
+
+
 async def match_node(state: AgentState) -> dict[str, Any]:
     """Находим контрагента по ИНН/названию; нет — создаём (точечные live-запросы)."""
     inv = state["invoice"]
@@ -136,12 +159,14 @@ def build_graph():
     g = StateGraph(AgentState)
     g.add_node("extract", extract_node)
     g.add_node("validate", validate_node)
+    g.add_node("ingest", ingest_node)
     g.add_node("match", match_node)
     g.add_node("confirm", confirm_node)
     g.add_node("execute", execute_node)
     g.add_edge(START, "extract")
     g.add_edge("extract", "validate")
-    g.add_edge("validate", "match")
+    g.add_edge("validate", "ingest")
+    g.add_edge("ingest", "match")
     g.add_edge("match", "confirm")
     g.add_conditional_edges("confirm", route_after_confirm, {"execute": "execute", END: END})
     g.add_edge("execute", END)
