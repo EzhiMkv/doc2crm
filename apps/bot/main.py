@@ -166,7 +166,13 @@ async def on_photo(message: Message, bot: Bot) -> None:
     try:
         state = await start_document_flow(graph, str(dest), thread)
     except Exception as ex:  # noqa: BLE001 — наружу идёт короткое человекочитаемое сообщение
-        await notice.edit_text(f"💥 Не смог обработать документ: {str(ex)[:200]}")
+        if "429" in str(ex):
+            await notice.edit_text(
+                "⏳ Суточный лимит бесплатной LLM-модели исчерпан.\n"
+                "Попробуй через несколько часов или впиши платный ключ в .env."
+            )
+        else:
+            await notice.edit_text(f"💥 Не смог обработать документ: {str(ex)[:200]}")
         return
     await notice.edit_text(
         card_text(state), reply_markup=confirm_keyboard(thread),

@@ -53,28 +53,43 @@ class LLM:
     async def chat(
         self, messages: list[dict[str, Any]], *, temperature: float = 0.0
     ) -> str:
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": temperature,
-        }
+        """Запрос с ретраями на 5xx и fallback-цепочкой моделей на 429.
+
+        Free-тиры ограничивают суточный лимит на модель: если основная
+        модель упёрлась в 429, пробуем LLM_FALLBACK_MODELS (через запятую).
+        """
+        models = [self.model]
+        models += [
+            m.strip() for m in os.environ.get("LLM_FALLBACK_MODELS", "").split(",")
+            if m.strip()
+        ]
         delay = 1.0
         last_err = ""
-        for _ in range(4):
-            resp = await self._http.post(
-                f"{self.base_url}/chat/completions",
-                headers={"Authorization": f"Bearer {self.api_key}"},
-                json=payload,
-            )
-            if resp.status_code in (429, 500, 502, 503, 529):
-                last_err = f"HTTP {resp.status_code}"
-                await asyncio.sleep(delay)
-                delay = min(delay * 2, 30.0)
-                continue
-            data = resp.json()
-            if "error" in data:
-                raise LLMError(f"{data['error']}")
-            return data["choices"][0]["message"]["content"]
+        for current in models:
+            payload = {
+                "model": current,
+                "messages": messages,
+                "temperature": temperature,
+            }
+            for _ in range(4):
+                resp = await self._http.post(
+                    f"{self.base_url}/chat/completions",
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    json=payload,
+                )
+                if resp.status_code in (429, 500, 502, 503, 529):
+                    last_err = f"HTTP {resp.status_code} ({current})"
+                    await asyncio.sleep(delay)
+                    delay = min(delay * 2, 30.0)
+                    continue
+                data = resp.json()
+                if "error" in data:
+                    raise LLMError(f"{data['error']}")
+                if current != self.model:
+                    self.model = current  # рабочая модель запоминается
+                return data["choices"][0]["message"]["content"]
+            if resp.status_code != 429:
+                break  # 5xx после ретраев — fallback не поможет, это инфра
         raise LLMError(f"LLM не ответил после ретраев ({last_err})")
 
     async def chat_json(self, messages: list[dict[str, Any]], schema: type[BaseModel]) -> BaseModel:
