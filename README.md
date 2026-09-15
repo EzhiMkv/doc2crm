@@ -8,10 +8,10 @@
 
 ## Что это
 
-Уровень production-minded: production-minded MVP на актуальном AI-стеке 2026:
+Production-minded MVP на актуальном AI-стеке 2026:
 
 - **Агент на LangGraph** — граф состояний с checkpointing и human-in-the-loop
-- **MCP-сервер для Битрикс24** (`bitrix-mcp`) — отдельный open-source пакет
+- **Интеграция с Битрикс24**: собственный асинхронный клиент (rate-limiting, batch, backoff), MCP-подход
 - **RAG**: по загруженным документам (с цитатами) и по товарному каталогу
   (семантический поиск, pgvector, гибридный поиск)
 - **Провайдер-агностик LLM-слой**: DeepSeek / GigaChat / YandexGPT /
